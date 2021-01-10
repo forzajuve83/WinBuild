@@ -1,0 +1,351 @@
+---
+  - name: Start Deployment
+    search_excel:
+      src: "{{ deploy_file }}"
+      search_token: "{{ outer_item }}"
+      search_range: "{{ search_range }}"
+      search_options: "ix"                  # "i" to ignore case, "x" for exact match
+      sheet_name: "{{ host_tab }}"
+    register: column
+
+  - name: Set Fact for Result
+    set_fact:
+      column: '{{ column.list[0].col_no }}'
+  
+  # TECHNICAL SPECIFICATION
+  - name: Set Fact Read Range of Tech Tab
+    set_fact:
+      read_range_tech_tab: "{'start_row': 2, 'start_col': {{ column }}, 'end_row': 12, 'end_col': {{ column }} }"
+  
+  - name: Read Technical Information of Virtual Machine
+    open_excel:
+      index_by_name: yes
+      src: "{{ deploy_file }}"
+      op: "r"
+      sheet_name: "{{ host_tab }}"
+      read_range: "{{ read_range_tech_tab }}"
+    register: vm_tech_info
+
+  - name: Show Result
+    debug:
+      msg: "{{ vm_tech_info }}"
+  
+  - name: Define Technical Specification
+    set_fact:
+      vm_name: "{{ vm_tech_info.sheet_index_0[0].None }}"
+      cpu: "{{ vm_tech_info.sheet_index_0[1].None }}"
+      memory: "{{ vm_tech_info.sheet_index_0[2].None|int * 1024 }}"
+      esx_name: "{{ vm_tech_info.sheet_index_0[3].None }}"
+      vm_folder_name: "{{ vm_tech_info.sheet_index_0[4].None }}"
+      datastore_name: "{{ vm_tech_info.sheet_index_0[5].None }}"
+      os_name: "{{ vm_tech_info.sheet_index_0[8].None }}"
+      template_name: "{{ vm_tech_info.sheet_index_0[9].None }}"
+      local_admin_name: "{{ vm_tech_info.sheet_index_0[10].None }}"
+  
+  - name: Show Technical Specification
+    debug:
+      msg: 
+        - "VMName = {{ vm_name }}"
+        - "CPU = {{ cpu }}"
+        - "Memory (MB) =  {{ memory }}"
+        - "ESXI Host Name = {{ esx_name }}"
+        - "VM Folder Name = {{ vm_folder_name }}"
+        - "DataStore Name = {{ datastore_name }}"
+        - "Operating System Name = {{ os_name }}"
+        - "Template Name = {{ template_name }}"
+        - "Local Administrator Name = {{ local_admin_name }}"
+  
+  # NETWORK SPECIFICATION
+  - name: Set Fact Read Range of Network Tab
+    set_fact:
+      read_range_net_tab: "{'start_row': 2, 'start_col': {{ column }}, 'end_row': 21, 'end_col': {{ column }} }"
+  
+  - name: Read Network Information of Virtual Machine
+    open_excel:
+      index_by_name: yes
+      src: "{{ deploy_file }}"
+      op: "r"
+      sheet_name: "{{ network_tab }}"
+      read_range: "{{ read_range_net_tab }}"
+    register: vm_net_info
+  
+  - name: Define Network Specification
+    set_fact:
+      search_domain: "{{ vm_net_info.sheet_index_0[1].None }}"
+          
+      network_name_1: "{{ vm_net_info.sheet_index_0[2].None }}"
+      vlanname_1: "{{ vm_net_info.sheet_index_0[3].None }}"
+      vlanid_1: "{{ vm_net_info.sheet_index_0[4].None }}"
+      ip_1: "{{ vm_net_info.sheet_index_0[5].None }}"
+      netmask_1: "{{ vm_net_info.sheet_index_0[6].None }}"
+          
+      gateway: "{{ vm_net_info.sheet_index_0[7].None }}"
+      dns_1: "{{ vm_net_info.sheet_index_0[8].None }}"
+      dns_2: "{{ vm_net_info.sheet_index_0[9].None }}"
+
+      network_name_2: "{{ vm_net_info.sheet_index_0[10].None }}"
+      vlanname_2: "{{ vm_net_info.sheet_index_0[11].None }}"
+      vlanid_2: "{{ vm_net_info.sheet_index_0[12].None }}"
+      ip_2: "{{ vm_net_info.sheet_index_0[13].None }}"
+      netmask_2: "{{ vm_net_info.sheet_index_0[14].None }}"
+
+      network_name_3: "{{ vm_net_info.sheet_index_0[15].None }}"
+      vlanname_3: "{{ vm_net_info.sheet_index_0[16].None }}"
+      vlanid_3: "{{ vm_net_info.sheet_index_0[17].None }}"
+      ip_3: "{{ vm_net_info.sheet_index_0[18].None }}"
+      netmask_3: "{{ vm_net_info.sheet_index_0[19].None }}"
+  
+  - name: Show Network Specification
+    debug:
+      msg: 
+        - "Domain = {{ search_domain }}"
+        - "Network Name #1 = {{ network_name_1 }}"
+        - "VLAN Name #1 = {{ vlanname_1 }}"
+        - "VLAN ID #1 =  {{ vlanid_1 }}"
+        - "IP Address #1 = {{ ip_1 }}"
+        - "Subnet Mask #1 = {{ netmask_1 }}"
+        - "########################################"
+        - "Gateway = {{ gateway }}"
+        - "DNS1 = {{ dns_1 }}"
+        - "DNS2 = {{ dns_2 }}"
+        - "########################################"
+        - "Network Name #2 = {{ network_name_2 }}"
+        - "VLAN Name #2 = {{ vlanname_2 }}"
+        - "VLAN ID #2 =  {{ vlanid_2 }}"
+        - "IP Address #2 = {{ ip_2 }}"
+        - "Subnet Mask #2 = {{ netmask_2 }}"
+        - "########################################"
+        - "Network Name #3 = {{ network_name_3 }}"
+        - "VLAN Name #3 = {{ vlanname_3 }}"
+        - "VLAN ID #3 =  {{ vlanid_3 }}"
+        - "IP Address #3 = {{ ip_3 }}"
+        - "Subnet Mask #3 = {{ netmask_3 }}"
+
+   # DISK SPECIFICATION
+  - name: Set Fact Read Range of Storage Tab
+    set_fact:
+      read_range_storage_tab: "{'start_row': 2, 'start_col': {{ column }}, 'end_row': 30, 'end_col': {{ column }} }"
+
+  - name: Read Storage Information of Virtual Machine
+    open_excel:
+      index_by_name: yes
+      src: "{{ deploy_file }}"
+      op: "r"
+      sheet_name: "{{ storage_tab }}"
+      read_range: "{{ read_range_storage_tab }}"
+    register: vm_storage_info
+  
+  #Define disk C and availability of additional disks
+  - name: Define Size of Disk C
+    set_fact:
+      disk_c_size: "{{ vm_storage_info.sheet_index_0[3].None }}"
+      check_disk0: true
+      check_disk1: true
+      check_disk2: true
+      check_disk3: true
+      check_disk4: true
+      disks: {}
+
+  
+  - name: Define Storage Specification in dictionary
+    set_fact: 
+      disk0:
+        vdisk0: 
+          unit: "{{ vm_storage_info.sheet_index_0[4].None }}"
+          size: "{{ vm_storage_info.sheet_index_0[6].None }}"
+      disk1:
+        vdisk1: 
+          unit: "{{ vm_storage_info.sheet_index_0[9].None }}"
+          size: "{{ vm_storage_info.sheet_index_0[11].None }}"
+      disk2:
+        vdisk2: 
+          unit: "{{ vm_storage_info.sheet_index_0[14].None }}"
+          size: "{{ vm_storage_info.sheet_index_0[16].None }}"
+      disk3:
+        vdisk3: 
+          unit: "{{ vm_storage_info.sheet_index_0[19].None }}"
+          size: "{{ vm_storage_info.sheet_index_0[21].None }}"
+      disk4:
+        vdisk4: 
+          unit: "{{ vm_storage_info.sheet_index_0[24].None }}"
+          size: "{{ vm_storage_info.sheet_index_0[26].None }}"
+
+  - name: Delete not defined disks Disk0
+    set_fact:
+      check_disk0: false
+    loop: "{{ query('dict', disk0 ) }}"
+    when: '"None" in disk0.vdisk0.values()'
+  - name: Delete not defined disks Disk1
+    set_fact:
+      check_disk1: false
+    loop: "{{ query('dict', disk1 ) }}"
+    when: '"None" in disk1.vdisk1.values()'
+  - name: Delete not defined disks Disk2
+    set_fact:
+      check_disk2: false
+    loop: "{{ query('dict', disk2 ) }}"
+    when: '"None" in disk2.vdisk2.values()'
+  - name: Delete not defined disks Disk3
+    set_fact:
+      check_disk3: false
+    loop: "{{ query('dict', disk3 ) }}"
+    when: '"None" in disk3.vdisk3.values()'
+  - name: Delete not defined disks Disk4
+    set_fact:
+      check_disk4: false
+    loop: "{{ query('dict', disk4 ) }}"
+    when: '"None" in disk4.vdisk4.values()'
+
+  - name: Show Results
+    debug:
+      msg: 
+        - "{{ check_disk0 }}"
+        - "{{ check_disk1 }}"
+        - "{{ check_disk2 }}"
+        - "{{ check_disk3 }}"
+        - "{{ check_disk4 }}"
+  
+  - name: Add available disk to DISKS dictionary 0
+    set_fact:
+      disks: "{{ disks | default({}) | combine({item.key: item.value}) }}"
+    with_dict: "{{ disk0 }}"
+    when: check_disk0
+  - name: Add available disk to DISKS dictionary 1
+    set_fact:
+      disks: "{{ disks | default({}) | combine({item.key: item.value}) }}"
+    with_dict: "{{ disk1 }}"
+    when: check_disk1
+  - name: Add available disk to DISKS dictionary 2
+    set_fact:
+      disks: "{{ disks | default({}) | combine({item.key: item.value}) }}"
+    with_dict: "{{ disk2 }}"
+    when: check_disk2
+  - name: Add available disk to DISKS dictionary 3
+    set_fact:
+      disks: "{{ disks | default({}) | combine({item.key: item.value}) }}"
+    with_dict: "{{ disk3 }}"
+    when: check_disk3
+  - name: Add available disk to DISKS dictionary 4
+    set_fact:
+      disks: "{{ disks | default({}) | combine({item.key: item.value}) }}"
+    with_dict: "{{ disk4 }}"
+    when: check_disk4
+
+  - name: Show Available DISKs
+    debug:
+      msg: "{{ item }}"
+    with_dict: "{{ disks }}"
+  
+
+  #START DEPLOYMENT
+  - name: Clone a virtual machine from template
+    community.vmware.vmware_guest:
+      hostname: "{{ vcenter }}"
+      username: "{{ username }}"
+      password: "{{ vcenterpassword }}"
+      validate_certs: no
+      datacenter: "{{ datacenter }}"
+      datastore: "{{ datastore_name }}"
+      esxi_hostname: "{{ esx_name }}{{ domain_name }}"
+      state: poweredon
+      folder: "{{ vm_folder_name }}"
+      template: "{{ template_name }}"
+        
+      customization:
+        autologon: no
+        hostname: "{{ vm_name }}"
+        password: "{{ windowspassword }}"
+        timezone: 110
+      name: "{{ vm_name }}"
+
+      hardware:
+        memory_mb: "{{ memory }}"
+        num_cpus: "{{ cpu }}"
+      networks:
+        - name: "{{ vlanname_1 }}"
+          ip: "{{ ip_1 }}"
+          netmask: "{{ netmask_1 }}"
+          gateway: "{{ gateway }}"
+          dns_servers:
+            - "{{ dns_1 }}"
+            - "{{ dns_2 }}"
+          domain: "{{ search_domain }}"
+        - name: "{{ vlanname_2 }}"
+          ip: "{{ ip_2 }}"
+          netmask: "{{ netmask_2 }}"
+        - name: "{{ vlanname_3 }}"
+          ip: "{{ ip_3 }}"
+          netmask: "{{ netmask_3 }}"
+      wait_for_ip_address: True
+      wait_for_customization: True
+    delegate_to: localhost
+    
+  - name: Wait for full initialization
+    pause:
+      minutes: 3
+  
+  #Extend DISK C if size more than 40GB
+  - name: Extend Disk C
+    vmware_guest_disk:
+      hostname: "{{ vcenter }}"
+      username: "{{ username }}"
+      password: "{{ vcenterpassword }}"
+      datacenter: "{{ datacenter }}"
+      folder: "{{ vm_folder_name }}"
+      validate_certs: no
+      name: "{{ vm_name }}"            
+      disk:
+        - size_gb: "{{ disk_c_size }}"
+          type: thin
+          datastore: "{{ datastore_name }}"
+          state: present
+          scsi_controller: 0
+          unit_number: 0
+    delegate_to: localhost
+  
+  - name: Wait for disk C
+    pause:
+      minutes: 1
+
+  #Create additional disks
+  - name: Create Additional Disks 
+    vmware_guest_disk:
+      hostname: "{{ vcenter }}"
+      username: "{{ username }}"
+      password: "{{ vcenterpassword }}"
+      datacenter: "{{ datacenter }}"
+      folder: "{{ vm_folder_name }}"
+      validate_certs: no
+      name: "{{ vm_name }}"            
+      disk:
+        - size_gb: "{{ item.value.size }}"
+          type: thin
+          datastore: "{{ datastore_name }}"
+          state: present
+          scsi_controller: 1
+          scsi_type: paravirtual
+          unit_number: "{{ item.value.unit }}"
+    with_dict: "{{ disks }}"
+    loop_control:
+      pause: 60
+    ignore_errors: yes
+    delegate_to: localhost
+
+  - name: Enable WinRM for Ansible and Install HC Luncher 
+    local_action:
+      module: vmware_vm_shell
+      hostname: "{{vcenter}}"
+      username: "{{username}}"
+      password: "{{vcenterpassword}}"
+      validate_certs: no
+      vm_username: "{{windowsuser}}"
+      vm_password: "{{windowspassword}}"
+      vm_id: "{{vm_name}}"
+      vm_shell: 'c:\windows\system32\windowspowershell\v1.0\powershell.exe'
+      wait_for_process: yes
+      vm_shell_args: '
+        Set-ExecutionPolicy Unrestricted -force ; 
+        C:\Temp\PowerShell\ConfigureRemotingForAnsible.ps1 ; 
+        Set-ExecutionPolicy RemoteSigned -force ; 
+        C:\Temp\PowerShell\HCL_Install.bat'
+  

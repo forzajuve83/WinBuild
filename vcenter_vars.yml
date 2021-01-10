@@ -1,0 +1,44 @@
+---
+# Common variables
+- validate_certs: no
+- debug_flag: no
+
+# Credentials
+- username: ansible@vsphere.local
+- password: L0real@nsible
+- vcenter: bda-vcenter.gtslab.intranet.ibm.com
+
+# DataCenter
+- datacenter: Test-Loreal
+
+# Cluster
+- cluster: VirtualCluster
+
+# ESXI Servers
+- esxi01: bda-esxi01.gtslab.intranet.ibm.com
+- esxi02: bda-esxi02.gtslab.intranet.ibm.com
+
+# DataStores
+- esxi01-1: bda-esxi01-local01
+- esxi01-2: bda-esxi01-local02
+- esxi02-1: bda-esxi02-local01
+- esxi02-2: bda-esxi02-local02
+- naspool1: NFSPool1
+- naspool2: NFSPool2
+
+# DataStore Cluster
+- datastorecluster: VirtualDSCluster
+
+# Virtual Machines
+- vm1: VM-LR1
+- vm2: Win2K16Template
+- vm3: ansible
+- vm4: CentOS
+- vm5: bda-vcenter
+
+# Networks
+- network1: VM Network
+- network2: TestNet01
+- network3: TestNet02
+- network4: Fake_VLAN801
+- network5: Fake_VLAN802
